@@ -1,38 +1,22 @@
-use horizon_api::{
-    block::{Block, BlockBehavior, BlockId, BlockProperties, SoundType},
-    mod_prelude::*,
-    registry::Registry,
-};
+use android_activity::{AndroidApp, MainEvent, PollEvent};
+use android_logger::Config;
+use log::LevelFilter;
 
-/// Упрочнённое стекло: прозрачное, но с прочностью камня (не ломается с одного удара)
-pub struct ReinforcedGlass;
+mod config;
+mod game;
+mod ui;
+mod overlay;
 
-impl BlockBehavior for ReinforcedGlass {
-    fn properties(&self) -> BlockProperties {
-        BlockProperties::builder()
-            .hardness(1.5)          // обычное стекло ~0.3, камень 1.5
-            .resistance(6.0)        // взрывоустойчивость (как у камня)
-            .transparent(true)
-            .sound(SoundType::Glass)
-            .requires_tool(true)    // ломается только киркой
-            .build()
-    }
+#[no_mangle]
+fn android_main(app: AndroidApp) {
+    android_logger::init_once(
+        Config::default()
+            .with_max_level(LevelFilter::Info)
+            .with_tag("StanLauncher"),
+    );
 
-    fn on_break(&self, _ctx: &mut BlockBreakContext) {
-        // Можно добавить дроп: например, выпадает само стекло
-    }
-}
-
-#[horizon::mod_init]
-pub fn init(registry: &mut Registry) -> Result<(), ModError> {
-    let id = BlockId::new("reinforced_glass", "reinforced_glass");
-
-    registry.register_block(
-        id,
-        ReinforcedGlass,
-        // привязка текстур и модели
-        BlockModel::cube_all("reinforced_glass:block/reinforced_glass"),
-    )?;
-
-    Ok(())
+    log::info!("Stan Launcher запущен");
+    let cfg = config::Config::load();
+    let mut app_loop = ui::AppLoop::new(app, cfg);
+    app_loop.run();
 }
