@@ -27,14 +27,14 @@ public class MainActivity extends Activity {
             clickSound = null;
         }
 
-        // ВЫЗОВ НАШЕЙ НОВОЙ ФУНКЦИИ
+        // Создаем папки Game и внутренние
         createGameFolders();
 
         LinearLayout menuLayout = new LinearLayout(this);
         menuLayout.setOrientation(LinearLayout.VERTICAL);
         menuLayout.setPadding(50, 50, 50, 50);
         menuLayout.setGravity(android.view.Gravity.CENTER);
-        menuLayout.setBackgroundColor(Color.rgb(236, 233, 216)); // Стиль Windows XP
+        menuLayout.setBackgroundColor(Color.rgb(236, 233, 216)); 
 
         ImageView logo = new ImageView(this);
         try { logo.setImageResource(R.drawable.minecraft); } catch (Exception e) {}
@@ -54,17 +54,23 @@ public class MainActivity extends Activity {
         menuLayout.addView(versionImg, verParams);
 
         playBtn = new Button(this);
-        playBtn.setOnClickListener(v -> {
-            playSound();
-            startActivity(new Intent(MainActivity.this, GameActivity.class));
+        playBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                playSound();
+                startActivity(new Intent(MainActivity.this, GameActivity.class));
+            }
         });
         menuLayout.addView(playBtn);
 
         langBtn = new Button(this);
-        langBtn.setOnClickListener(v -> {
-            playSound();
-            isRussian = !isRussian;
-            updateLanguage();
+        langBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                playSound();
+                isRussian = !isRussian;
+                updateLanguage();
+            }
         });
         menuLayout.addView(langBtn);
 
@@ -89,15 +95,11 @@ public class MainActivity extends Activity {
         }
     }
 
-    // СОЗДАНИЕ ПАПКИ GAME И ВНУТРЕННИХ ПАПОК
     private void createGameFolders() {
-        // 1. Создаем папку Game в корне хранилища приложения
         File gameFolder = new File(getFilesDir(), "Game");
         if (!gameFolder.exists()) {
             gameFolder.mkdirs();
         }
-
-        // 2. Создаем папки внутри Game
         String[] subFolders = {"saves", "resourcepacks", "mods"};
         for (String folderName : subFolders) {
             File subFolder = new File(gameFolder, folderName);
