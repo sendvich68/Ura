@@ -18,7 +18,6 @@ public class GameRenderer implements GLSurfaceView.Renderer {
     private final float[] viewMatrix = new float[16];
     private int program, textureGrass;
 
-    // Координаты куба
     private final float[] vertices = {
         -0.5f, -0.5f,  0.5f,   0.5f, -0.5f,  0.5f,   0.5f,  0.5f,  0.5f,  -0.5f,  0.5f,  0.5f,
         -0.5f, -0.5f, -0.5f,  -0.5f,  0.5f, -0.5f,   0.5f,  0.5f, -0.5f,   0.5f, -0.5f, -0.5f,
@@ -28,7 +27,6 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         -0.5f, -0.5f, -0.5f,  -0.5f, -0.5f,  0.5f,  -0.5f,  0.5f,  0.5f,  -0.5f,  0.5f, -0.5f
     };
 
-    // Текстурные координаты
     private final float[] texCoords = {
         0, 1,  1, 1,  1, 0,  0, 0, 
         0, 1,  1, 1,  1, 0,  0, 0, 
@@ -49,7 +47,7 @@ public class GameRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceCreated(GL10 unused, EGLConfig config) {
-        GLES20.glClearColor(0.5f, 0.7f, 1.0f, 1.0f); // Цвет неба
+        GLES20.glClearColor(0.5f, 0.7f, 1.0f, 1.0f); // Небо
         GLES20.glEnable(GLES20.GL_DEPTH_TEST);
 
         String vs = "uniform mat4 uMVPMatrix; attribute vec4 vPosition; attribute vec2 aTexCoordinate; varying vec2 vTexCoordinate; void main() { gl_Position = uMVPMatrix * vPosition; vTexCoordinate = aTexCoordinate; }";
@@ -69,14 +67,15 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         GLES20.glLinkProgram(program);
 
         // Загружаем ТРАВУ
-        textureGrass = loadTexture(R.drawable.grass_block);
+        try {
+            textureGrass = loadTexture(R.drawable.grass_block);
+        } catch (Exception e) {}
     }
 
     private int loadTexture(int resId) {
         int[] tex = new int[1];
         GLES20.glGenTextures(1, tex, 0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, tex[0]);
-        // САМОЕ ВАЖНОЕ: GL_NEAREST делает пиксели четкими (64x64)
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
         android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeResource(context.getResources(), resId);
@@ -89,7 +88,6 @@ public class GameRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceChanged(GL10 unused, int width, int height) {
         GLES20.glViewport(0, 0, width, height);
         float ratio = (float) width / height;
-        // Увеличиваем перспективу, чтобы куб не был огромным
         Matrix.frustumM(projectionMatrix, 0, -ratio * 2, ratio * 2, -2, 2, 3, 10);
     }
 
@@ -97,7 +95,6 @@ public class GameRenderer implements GLSurfaceView.Renderer {
     public void onDrawFrame(GL10 unused) {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
-        // Отодвигаем камеру на 4 шага назад
         Matrix.setLookAtM(viewMatrix, 0, 0, 0, -4f, 0f, 0f, 0f, 0f, 1.0f, 0.0f);
         Matrix.multiplyMM(vPMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
 
