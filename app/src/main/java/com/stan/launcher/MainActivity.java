@@ -1,7 +1,10 @@
 package com.stan.launcher;
 
 import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -9,12 +12,10 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // Создаем меню программно (чтобы не возиться с XML версткой)
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(50, 50, 50, 50);
@@ -28,21 +29,16 @@ public class MainActivity extends AppCompatActivity {
 
         Button playButton = new Button(this);
         playButton.setText("▶ Играть (v1.8)");
-        playButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                launchMinecraft();
-            }
-        });
+        playButton.setOnClickListener(v -> launchMinecraft());
         layout.addView(playButton);
 
-        Button settingsButton = new Button(this);
-        settingsButton.setText("⚙ Настройки управления");
-        layout.addView(settingsButton);
+        // Кнопка включения оверлея
+        Button overlayButton = new Button(this);
+        overlayButton.setText("🎮 Включить управление");
+        overlayButton.setOnClickListener(v -> checkOverlayPermission());
+        layout.addView(overlayButton);
 
         setContentView(layout);
-
-        // Создаем папки при старте
         createFolders();
     }
 
@@ -50,12 +46,21 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = getPackageManager().getLaunchIntentForPackage("com.mojang.minecraftpe");
         if (intent != null) {
             startActivity(intent);
+        }
+    }
+
+    // Проверка разрешения на показ поверх других приложений
+    private void checkOverlayPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (!Settings.canDrawOverlays(this)) {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
+            } else {
+                startService(new Intent(this, OverlayService.class));
+            }
         } else {
-            // Если игра не найдена, показываем ошибку
-            TextView errorText = new TextView(this);
-            errorText.setText("Minecraft PE не установлен на устройстве!");
-            errorText.setTextColor(0xFFFF0000);
-            ((LinearLayout) findViewById(android.R.id.content).getRootView()).addView(errorText);
+            startService(new Intent(this, OverlayService.class));
         }
     }
 
