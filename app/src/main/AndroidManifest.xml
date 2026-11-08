@@ -3,8 +3,9 @@
 
     <application
         android:allowBackup="true"
-        android:label="Stan Launcher"
-        android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar">
+        android:icon="@drawable/icon" 
+        android:label="Stan Launcher v0.1"
+        android:theme="@style/Theme.AppCompat.NoActionBar">
         
         <activity
             android:name=".MainActivity"
