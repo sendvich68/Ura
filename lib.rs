@@ -5,7 +5,6 @@ use log::LevelFilter;
 mod config;
 mod game;
 mod ui;
-mod overlay;
 
 #[no_mangle]
 fn android_main(app: AndroidApp) {
@@ -16,6 +15,13 @@ fn android_main(app: AndroidApp) {
     );
 
     log::info!("Stan Launcher запущен");
+    
+    // Создаем папки
+    let _ = std::fs::create_dir_all("versions");
+    let _ = std::fs::create_dir_all("mods");
+    let _ = std::fs::create_dir_all("resourcepacks");
+    let _ = std::fs::create_dir_all("saves");
+
     let cfg = config::Config::load();
     let mut app_loop = ui::AppLoop::new(app, cfg);
     app_loop.run();
