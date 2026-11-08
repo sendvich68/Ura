@@ -2,8 +2,10 @@ package com.stan.launcher;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.media.MediaPlayer;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -13,27 +15,19 @@ import android.graphics.Color;
 import java.io.File;
 
 public class MainActivity extends Activity {
-    private MediaPlayer clickSound;
     private boolean isRussian = true;
-    private Button playBtn, langBtn;
+    private Button playBtn, langBtn, overlayBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        try {
-            clickSound = MediaPlayer.create(this, R.raw.click);
-        } catch (Exception e) {
-            clickSound = null;
-        }
-
         createGameFolders();
 
         LinearLayout menuLayout = new LinearLayout(this);
         menuLayout.setOrientation(LinearLayout.VERTICAL);
         menuLayout.setPadding(50, 50, 50, 50);
         menuLayout.setGravity(android.view.Gravity.CENTER);
-        menuLayout.setBackgroundColor(Color.rgb(236, 233, 216)); 
+        menuLayout.setBackgroundColor(Color.rgb(236, 233, 216));
 
         ImageView logo = new ImageView(this);
         try { logo.setImageResource(R.drawable.minecraft); } catch (Exception e) {}
@@ -51,17 +45,25 @@ public class MainActivity extends Activity {
         playBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                playSound();
                 startActivity(new Intent(MainActivity.this, GameActivity.class));
             }
         });
         menuLayout.addView(playBtn);
 
+        // Кнопка включения оверлея
+        overlayBtn = new Button(this);
+        overlayBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                checkOverlayPermission();
+            }
+        });
+        menuLayout.addView(overlayBtn);
+
         langBtn = new Button(this);
         langBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                playSound();
                 isRussian = !isRussian;
                 updateLanguage();
             }
@@ -72,27 +74,37 @@ public class MainActivity extends Activity {
         updateLanguage();
     }
 
-    private void updateLanguage() {
-        if (isRussian) {
-            playBtn.setText("Создать мир");
-            langBtn.setText("Язык: Русский");
+    private void checkOverlayPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (!Settings.canDrawOverlays(this)) {
+                // Открываем настройки для разрешения
+                Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
+            } else {
+                // Разрешение уже есть — запускаем сервис
+                startService(new Intent(this, OverlayService.class));
+            }
         } else {
-            playBtn.setText("Create World");
-            langBtn.setText("Language: English");
+            startService(new Intent(this, OverlayService.class));
         }
     }
 
-    private void playSound() {
-        if (clickSound != null) {
-            clickSound.seekTo(0);
-            clickSound.start();
+    private void updateLanguage() {
+        if (isRussian) {
+            playBtn.setText("Создать мир");
+            overlayBtn.setText("Включить управление");
+            langBtn.setText("Язык: Русский");
+        } else {
+            playBtn.setText("Create World");
+            overlayBtn.setText("Enable Controls");
+            langBtn.setText("Language: English");
         }
     }
 
     private void createGameFolders() {
         File gameFolder = new File(getFilesDir(), "Game");
         if (!gameFolder.exists()) gameFolder.mkdirs();
-        
         String[] subFolders = {"saves", "resourcepacks", "mods"};
         for (String folderName : subFolders) {
             File subFolder = new File(gameFolder, folderName);
