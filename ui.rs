@@ -33,8 +33,9 @@ impl AppLoop {
                     if let InputStatus::Handled = self.app.input_events_iter().read(|event| {
                         use android_activity::input::{InputEvent, MotionAction};
                         if let InputEvent::MotionEvent(m) = event {
-                            if let Some(pointer) = m.pointers().first() {
-                                let pos = egui::pos2(pointer.x, pointer.y);
+                            // Используем итератор точек касания
+                            for pointer in m.pointers() {
+                                let pos = egui::pos2(pointer.x(), pointer.y());
                                 if matches!(m.action(), MotionAction::Down) {
                                     self.raw_input.events.push(egui::Event::PointerMoved(pos));
                                     self.raw_input.events.push(egui::Event::PointerButton {
