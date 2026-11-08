@@ -1,13 +1,12 @@
 package com.stan.launcher;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.Button;
-import android.widget.LinearLayout;
-import android.view.Gravity;
+import android.widget.TextView;
 import android.graphics.Color;
+import android.view.Gravity;
 
 public class GameActivity extends Activity {
     @Override
@@ -15,39 +14,26 @@ public class GameActivity extends Activity {
         super.onCreate(savedInstanceState);
         
         FrameLayout layout = new FrameLayout(this);
-
-        // Фон "Грязь" (имя файла строго gryaz.png)
-        ImageView bg = new ImageView(this);
+        
+        // Запускаем Mojo Launcher
         try {
-            bg.setImageResource(R.drawable.gryaz);
-            bg.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        } catch (Exception e) {}
-        layout.addView(bg);
-
-        // 3D-мир (куб)
-        GameSurfaceView gameView = new GameSurfaceView(this);
-        layout.addView(gameView);
-
-        // Мобильное управление (Джойстик и кнопка прыжка)
-        LinearLayout controls = new LinearLayout(this);
-        controls.setOrientation(LinearLayout.HORIZONTAL);
-        controls.setGravity(Gravity.BOTTOM);
-        
-        // Прозрачный фон для контроля
-        controls.setPadding(50, 50, 50, 50); 
-
-        Button jumpBtn = new Button(this);
-        jumpBtn.setText("JUMP");
-        jumpBtn.setAlpha(0.5f);
-        
-        Button joystickBtn = new Button(this);
-        joystickBtn.setText("JOYSTICK");
-        joystickBtn.setAlpha(0.5f);
-
-        controls.addView(jumpBtn);
-        controls.addView(joystickBtn);
-        
-        layout.addView(controls);
+            Intent launchIntent = getPackageManager().getLaunchIntentForPackage("com.movtery.mojolauncher");
+            if (launchIntent != null) {
+                startActivity(launchIntent);
+                // Если лаунчер запустился, мы можем закрыть нашу активити,
+                // чтобы остаться на экране Java-игры
+            } else {
+                TextView errorText = new TextView(this);
+                errorText.setText("Установите Mojo Launcher!\n\n(Package: com.movtery.mojolauncher)");
+                errorText.setTextColor(Color.RED);
+                errorText.setTextSize(20f);
+                errorText.setGravity(Gravity.CENTER);
+                errorText.setBackgroundColor(Color.BLACK);
+                layout.addView(errorText);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         setContentView(layout);
     }
