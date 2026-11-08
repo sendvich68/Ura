@@ -1,0 +1,25 @@
+name: Build APK
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: aarch64-linux-android
+      - name: Install NDK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y android-sdk
+      - name: Build
+        run: |
+          cargo install cargo-apk
+          cargo apk build --release
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: stan-launcher
+          path: target/release/apk/*.apk
