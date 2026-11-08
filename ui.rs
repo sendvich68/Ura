@@ -31,30 +31,28 @@ impl AppLoop {
                 }
                 PollEvent::Main(MainEvent::InputAvailable) => {
                     if let Ok(mut iter) = self.app.input_events_iter() {
-                        loop {
-                            // Читаем по одному событию, пока они не закончатся
-                            if !iter.read_next(|event| {
-                                use android_activity::input::{InputEvent, MotionAction};
-                                if let InputEvent::MotionEvent(m) = event {
-                                    for pointer in m.pointers() {
-                                        let pos = egui::pos2(pointer.x(), pointer.y());
-                                        if matches!(m.action(), MotionAction::Down) {
-                                            self.raw_input.events.push(egui::Event::PointerMoved(pos));
-                                            self.raw_input.events.push(egui::Event::PointerButton {
-                                                pos, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default(),
-                                            });
-                                        }
-                                        if matches!(m.action(), MotionAction::Up) {
-                                            self.raw_input.events.push(egui::Event::PointerButton {
-                                                pos, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default(),
-                                            });
-                                        }
+                        // Используем правильный метод next() с колбэком
+                        while iter.next(|event| {
+                            use android_activity::input::{InputEvent, MotionAction};
+                            if let InputEvent::MotionEvent(m) = event {
+                                for pointer in m.pointers() {
+                                    let pos = egui::pos2(pointer.x(), pointer.y());
+                                    if matches!(m.action(), MotionAction::Down) {
+                                        self.raw_input.events.push(egui::Event::PointerMoved(pos));
+                                        self.raw_input.events.push(egui::Event::PointerButton {
+                                            pos, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default(),
+                                        });
+                                    }
+                                    if matches!(m.action(), MotionAction::Up) {
+                                        self.raw_input.events.push(egui::Event::PointerButton {
+                                            pos, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default(),
+                                        });
                                     }
                                 }
-                            }) {
-                                break;
                             }
-                        }
+                            // Возвращаем Handled, чтобы не было ошибок типов
+                            android_activity::input::InputStatus::Handled
+                        }) {}
                     }
                 }
                 PollEvent::Main(MainEvent::RedrawNeeded) | PollEvent::Timeout => {
