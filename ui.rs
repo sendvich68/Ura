@@ -1,4 +1,4 @@
-use android_activity::{AndroidApp, MainEvent, PollEvent, InputStatus};
+use android_activity::{AndroidApp, MainEvent, PollEvent};
 use egui::{Context, CentralPanel, RichText, Button};
 use crate::config::Config;
 use crate::game;
@@ -30,26 +30,28 @@ impl AppLoop {
                     ));
                 }
                 PollEvent::Main(MainEvent::InputAvailable) => {
-                    if let InputStatus::Handled = self.app.input_events_iter().read(|event| {
-                        use android_activity::input::{InputEvent, MotionAction};
-                        if let InputEvent::MotionEvent(m) = event {
-                            // Используем итератор точек касания
-                            for pointer in m.pointers() {
-                                let pos = egui::pos2(pointer.x(), pointer.y());
-                                if matches!(m.action(), MotionAction::Down) {
-                                    self.raw_input.events.push(egui::Event::PointerMoved(pos));
-                                    self.raw_input.events.push(egui::Event::PointerButton {
-                                        pos, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default(),
-                                    });
-                                }
-                                if matches!(m.action(), MotionAction::Up) {
-                                    self.raw_input.events.push(egui::Event::PointerButton {
-                                        pos, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default(),
-                                    });
+                    // Безопасный способ чтения событий в новой версии
+                    if let Ok(mut iter) = self.app.input_events_iter() {
+                        iter.read(|event| {
+                            use android_activity::input::{InputEvent, MotionAction};
+                            if let InputEvent::MotionEvent(m) = event {
+                                for pointer in m.pointers() {
+                                    let pos = egui::pos2(pointer.x(), pointer.y());
+                                    if matches!(m.action(), MotionAction::Down) {
+                                        self.raw_input.events.push(egui::Event::PointerMoved(pos));
+                                        self.raw_input.events.push(egui::Event::PointerButton {
+                                            pos, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default(),
+                                        });
+                                    }
+                                    if matches!(m.action(), MotionAction::Up) {
+                                        self.raw_input.events.push(egui::Event::PointerButton {
+                                            pos, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default(),
+                                        });
+                                    }
                                 }
                             }
-                        }
-                    }) {}
+                        });
+                    }
                 }
                 PollEvent::Main(MainEvent::RedrawNeeded) | PollEvent::Timeout => {
                     self.draw();
