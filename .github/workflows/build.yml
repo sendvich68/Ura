@@ -8,10 +8,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-linux-android
+      - name: Install Rust and Target
+        run: |
+          rustup target add aarch64-linux-android
 
       - name: Setup Android NDK
         uses: nttld/setup-ndk@v1
