@@ -1,77 +1,101 @@
-use jni::objects::{JObject, JValue};
-use jni::JavaVM;
-use log::{error, info};
+use android_activity::{AndroidApp, MainEvent, PollEvent};
+use egui::{Context, CentralPanel, RichText, Button};
+use crate::config::Config;
+use crate::game;
 
-const MINECRAFT_PACKAGE: &str = "com.mojang.minecraftpe";
-
-pub fn try_launch(app: &android_activity::AndroidApp) {
-    let ptr = app.vm_as_ptr();
-    if ptr.is_null() {
-        error!("JavaVM недоступна");
-        return;
-    }
-    
-    let vm = unsafe { JavaVM::from_raw(ptr as *mut jni::sys::JavaVM) };
-    
-    // Прикрепляем текущий поток к Java
-    let mut env = match vm.attach_current_thread() {
-        Ok(e) => e,
-        Err(e) => {
-            error!("Не удалось прикрепить поток к JVM: {}", e);
-            return;
-        }
-    };
-
-    if let Err(e) = launch(&mut env) {
-        error!("Ошибка запуска Minecraft: {}", e);
-    }
+pub struct AppLoop {
+    app: AndroidApp,
+    cfg: Config,
+    egui_ctx: Context,
+    raw_input: egui::RawInput,
 }
 
-fn launch(env: &mut jni::JNIEnv) -> Result<(), String> {
-    // 1. Создаем Intent
-    let action = env.new_string("android.intent.action.MAIN").unwrap();
-    let intent = env
-        .new_object(
-            "android/content/Intent",
-            "(Ljava/lang/String;)V",
-            &[JValue::Object(&JObject::from(action))],
-        )
-        .map_err(|e| format!("Ошибка создания Intent: {}", e))?;
+impl AppLoop {
+    pub fn new(app: AndroidApp, cfg: Config) -> Self {
+        Self {
+            app,
+            cfg,
+            egui_ctx: Context::default(),
+            raw_input: egui::RawInput::default(),
+        }
+    }
 
-    // 2. Устанавливаем пакет Minecraft
-    let pkg = env.new_string(MINECRAFT_PACKAGE).unwrap();
-    env.call_method(
-        &intent,
-        "setPackage",
-        "(Ljava/lang/String;)Landroid/content/Intent;",
-        &[JValue::Object(&JObject::from(pkg))],
-    )
-    .map_err(|e| format!("Ошибка setPackage: {}", e))?;
+    pub fn run(&mut self) {
+        loop {
+            match self.app.poll_events(Some(std::time::Duration::from_millis(16))) {
+                PollEvent::Main(MainEvent::WindowResized { width, height }) => {
+                    self.raw_input.screen_rect = Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(width as f32, height as f32),
+                    ));
+                }
+                PollEvent::Main(MainEvent::InputAvailable) => {
+                    if let Ok(mut iter) = self.app.input_events_iter() {
+                        loop {
+                            let read_input = iter.next(|event| {
+                                use android_activity::input::{InputEvent, MotionAction};
+                                if let InputEvent::MotionEvent(m) = event {
+                                    for pointer in m.pointers() {
+                                        let pos = egui::pos2(pointer.x(), pointer.y());
+                                        if matches!(m.action(), MotionAction::Down) {
+                                            self.raw_input.events.push(egui::Event::PointerMoved(pos));
+                                            self.raw_input.events.push(egui::Event::PointerButton {
+                                                pos, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default(),
+                                            });
+                                        }
+                                        if matches!(m.action(), MotionAction::Up) {
+                                            self.raw_input.events.push(egui::Event::PointerButton {
+                                                pos, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default(),
+                                            });
+                                        }
+                                    }
+                                }
+                                android_activity::input::InputStatus::Handled
+                            });
 
-    // 3. Получаем текущую Activity (без сложных проверок)
-    let activity_class = env
-        .find_class("org/libsdl/app/SDLActivity")
-        .or_else(|_| env.find_class("org/kivy/android/PythonActivity"))
-        .map_err(|e| format!("Не найден класс Activity: {}", e))?;
+                            if !read_input {
+                                break;
+                            }
+                        }
+                    }
+                }
+                PollEvent::Main(MainEvent::RedrawNeeded) | PollEvent::Timeout => {
+                    self.draw();
+                }
+                PollEvent::Main(MainEvent::Destroy) => break,
+                _ => {}
+            }; // <--- ТОЧКА С ЗАПЯТОЙ, КОТОРАЯ РЕШАЕТ ВСЁ
+        }
+    }
 
-    let m_activity = env
-        .get_static_field(&activity_class, "mActivity", "Landroid/app/Activity;")
-        .or_else(|_| env.get_static_field(&activity_class, "mCurrentContext", "Landroid/content/Context;"))
-        .map_err(|e| format!("Не найдено поле Activity: {}", e))?;
+    fn draw(&mut self) {
+        self.raw_input.time = Some(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs_f64()).unwrap_or(0.0));
 
-    let activity_obj = m_activity
-        .l()
-        .map_err(|e| format!("Ошибка получения Activity: {}", e))?;
+        let _ = self.egui_ctx.run(self.raw_input.take(), |ctx| {
+            CentralPanel::default().show(ctx, |ui| {
+                ui.vertical_centered(|ui| {
+                    ui.add_space(20.0);
+                    ui.heading(RichText::new("Stan Launcher").size(36.0).strong());
+                    ui.label(RichText::new("Minecraft Bedrock Edition").size(18.0));
+                    ui.add_space(20.0);
 
-    // 4. Запускаем игру!
-    env.call_method(
-        &activity_obj,
-        "startActivity",
-        "(Landroid/content/Intent;)V",
-        &[JValue::Object(&intent)],
-    )
-    .map_err(|e| format!("Ошибка startActivity: {}", e))?;
-
-    info!("✅ Minecraft запущен!");
-    Ok(())
+                    if ui.add_sized([260.0, 50.0], Button::new("▶  Играть (v1.8)")).clicked() {
+                        game::try_launch(&self.app);
+                    }
+                    
+                    ui.add_space(15.0);
+                    ui.horizontal(|ui| {
+                        ui.label("Версия: 1.8");
+                        ui.label(" | Моды: 0");
+                        ui.label(" | Ресурспаки: 0");
+                        ui.label(" | Миры: 0");
+                    });
+                    
+                    ui.add_space(15.0);
+                    ui.label(format!("Прозрачность кнопок: {:.1}", self.cfg.controls.transparency));
+                    ui.label(format!("Размер джойстика: {}", self.cfg.controls.joy_size));
+                });
+            });
+        });
+    }
 }
