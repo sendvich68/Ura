@@ -27,7 +27,6 @@ public class MainActivity extends Activity {
             clickSound = null;
         }
 
-        // Создаем папки Game и внутренние
         createGameFolders();
 
         LinearLayout menuLayout = new LinearLayout(this);
@@ -47,11 +46,6 @@ public class MainActivity extends Activity {
         alphaText.setTextSize(20f);
         alphaText.setPadding(0, 10, 0, 30);
         menuLayout.addView(alphaText);
-
-        ImageView versionImg = new ImageView(this);
-        try { versionImg.setImageResource(R.drawable.a01_java_edition); } catch (Exception e) {}
-        LinearLayout.LayoutParams verParams = new LinearLayout.LayoutParams(200, 100);
-        menuLayout.addView(versionImg, verParams);
 
         playBtn = new Button(this);
         playBtn.setOnClickListener(new View.OnClickListener() {
@@ -97,15 +91,12 @@ public class MainActivity extends Activity {
 
     private void createGameFolders() {
         File gameFolder = new File(getFilesDir(), "Game");
-        if (!gameFolder.exists()) {
-            gameFolder.mkdirs();
-        }
+        if (!gameFolder.exists()) gameFolder.mkdirs();
+        
         String[] subFolders = {"saves", "resourcepacks", "mods"};
         for (String folderName : subFolders) {
             File subFolder = new File(gameFolder, folderName);
-            if (!subFolder.exists()) {
-                subFolder.mkdirs();
-            }
+            if (!subFolder.exists()) subFolder.mkdirs();
         }
     }
 }
