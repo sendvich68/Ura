@@ -31,7 +31,6 @@ impl AppLoop {
                 }
                 PollEvent::Main(MainEvent::InputAvailable) => {
                     if let Ok(mut iter) = self.app.input_events_iter() {
-                        // Используем loop с проверкой результата next()
                         loop {
                             let read_input = iter.next(|event| {
                                 use android_activity::input::{InputEvent, MotionAction};
@@ -94,7 +93,8 @@ impl AppLoop {
                     
                     ui.add_space(15.0);
                     ui.label(format!("Прозрачность кнопок: {:.1}", self.cfg.controls.transparency));
-                    ui.label(format!("Размер джойстика: {}", self.cfg.controls.joystick_size));
+                    // ИСПРАВЛЕНО: joy_size вместо joystick_size
+                    ui.label(format!("Размер джойстика: {}", self.cfg.controls.joy_size));
                 });
             });
         });
