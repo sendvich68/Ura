@@ -30,27 +30,31 @@ impl AppLoop {
                     ));
                 }
                 PollEvent::Main(MainEvent::InputAvailable) => {
-                    // Безопасный способ чтения событий в новой версии
                     if let Ok(mut iter) = self.app.input_events_iter() {
-                        iter.read(|event| {
-                            use android_activity::input::{InputEvent, MotionAction};
-                            if let InputEvent::MotionEvent(m) = event {
-                                for pointer in m.pointers() {
-                                    let pos = egui::pos2(pointer.x(), pointer.y());
-                                    if matches!(m.action(), MotionAction::Down) {
-                                        self.raw_input.events.push(egui::Event::PointerMoved(pos));
-                                        self.raw_input.events.push(egui::Event::PointerButton {
-                                            pos, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default(),
-                                        });
-                                    }
-                                    if matches!(m.action(), MotionAction::Up) {
-                                        self.raw_input.events.push(egui::Event::PointerButton {
-                                            pos, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default(),
-                                        });
+                        loop {
+                            // Читаем по одному событию, пока они не закончатся
+                            if !iter.read_next(|event| {
+                                use android_activity::input::{InputEvent, MotionAction};
+                                if let InputEvent::MotionEvent(m) = event {
+                                    for pointer in m.pointers() {
+                                        let pos = egui::pos2(pointer.x(), pointer.y());
+                                        if matches!(m.action(), MotionAction::Down) {
+                                            self.raw_input.events.push(egui::Event::PointerMoved(pos));
+                                            self.raw_input.events.push(egui::Event::PointerButton {
+                                                pos, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default(),
+                                            });
+                                        }
+                                        if matches!(m.action(), MotionAction::Up) {
+                                            self.raw_input.events.push(egui::Event::PointerButton {
+                                                pos, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default(),
+                                            });
+                                        }
                                     }
                                 }
+                            }) {
+                                break;
                             }
-                        });
+                        }
                     }
                 }
                 PollEvent::Main(MainEvent::RedrawNeeded) | PollEvent::Timeout => {
