@@ -22,7 +22,7 @@ impl AppLoop {
 
     pub fn run(&mut self) {
         loop {
-            // Ультра-фикс: poll_events принимает замыкание и НИЧЕГО не возвращает
+            // poll_events принимает замыкание и ничего не возвращает
             self.app.poll_events(Some(std::time::Duration::from_millis(16)), |event| {
                 match event {
                     PollEvent::Main(MainEvent::WindowResized { width, height }) => {
@@ -69,7 +69,7 @@ impl AppLoop {
                     }
                     _ => {}
                 }
-            }); // <--- ТОЧКА С ЗАПЯТОЙ ЗАКРЫВАЕТ ВЫЗОВ poll_events
+            }); // <-- ТОЧКА С ЗАПЯТОЙ ЗАКРЫВАЕТ ВЫЗОВ poll_events
         }
     }
 
