@@ -8,6 +8,7 @@ pub struct AppLoop {
     cfg: Config,
     egui_ctx: Context,
     raw_input: egui::RawInput,
+    running: bool,
 }
 
 impl AppLoop {
@@ -17,12 +18,13 @@ impl AppLoop {
             cfg,
             egui_ctx: Context::default(),
             raw_input: egui::RawInput::default(),
+            running: true,
         }
     }
 
     pub fn run(&mut self) {
-        loop {
-            // ПРАВИЛЬНО: poll_events принимает замыкание и ничего не возвращает
+        while self.running {
+            // Правильный вызов: poll_events принимает замыкание и ничего не возвращает
             self.app.poll_events(Some(std::time::Duration::from_millis(16)), |event| {
                 match event {
                     PollEvent::Main(MainEvent::WindowResized { width, height }) => {
@@ -65,11 +67,11 @@ impl AppLoop {
                         self.draw();
                     }
                     PollEvent::Main(MainEvent::Destroy) => {
-                        std::process::exit(0);
+                        self.running = false;
                     }
                     _ => {}
                 }
-            }); // <--- ЗАМЫКАНИЕ ЗАКРЫТО
+            });
         }
     }
 
