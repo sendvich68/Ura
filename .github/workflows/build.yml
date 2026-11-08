@@ -17,9 +17,6 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Android 33 Platform
-        run: sdkmanager "platforms;android-33" "build-tools;33.0.2"
-
       - name: Download Gradle
         run: |
           wget https://services.gradle.org/distributions/gradle-8.5-bin.zip
