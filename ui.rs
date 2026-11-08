@@ -1,6 +1,5 @@
-use android_activity::{AndroidApp, MainEvent, PollEvent};
+use android_activity::{AndroidApp, MainEvent, PollEvent, InputStatus};
 use egui::Context;
-
 use crate::config::Config;
 use crate::game;
 use crate::overlay;
@@ -37,26 +36,28 @@ impl AppLoop {
                     ));
                 }
                 PollEvent::Main(MainEvent::InputAvailable) => {
-                    let _ = self.app.input_events_iter().read(|event| {
+                    if let InputStatus::Handled = self.app.input_events_iter().read(|event| {
                         use android_activity::input::{InputEvent, MotionAction};
                         if let InputEvent::MotionEvent(m) = event {
-                            let pos = egui::pos2(m.pointer_coords(0).0, m.pointer_coords(0).1);
-                            let down = matches!(m.action(), MotionAction::Down);
-                            let up = matches!(m.action(), MotionAction::Up);
+                            if let Some(pointer) = m.pointers().first() {
+                                let pos = egui::pos2(pointer.x, pointer.y);
+                                let down = matches!(m.action(), MotionAction::Down);
+                                let up = matches!(m.action(), MotionAction::Up);
 
-                            if down {
-                                self.raw_input.events.push(egui::Event::PointerMoved(pos));
-                                self.raw_input.events.push(egui::Event::PointerButton {
-                                    pos, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default(),
-                                });
-                            }
-                            if up {
-                                self.raw_input.events.push(egui::Event::PointerButton {
-                                    pos, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default(),
-                                });
+                                if down {
+                                    self.raw_input.events.push(egui::Event::PointerMoved(pos));
+                                    self.raw_input.events.push(egui::Event::PointerButton {
+                                        pos, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default(),
+                                    });
+                                }
+                                if up {
+                                    self.raw_input.events.push(egui::Event::PointerButton {
+                                        pos, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default(),
+                                    });
+                                }
                             }
                         }
-                    });
+                    }) {}
                 }
                 PollEvent::Main(MainEvent::RedrawNeeded) | PollEvent::Timeout => {
                     self.draw();
