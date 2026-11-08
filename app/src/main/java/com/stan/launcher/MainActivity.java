@@ -10,11 +10,11 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.graphics.Color;
+import java.io.File;
 
 public class MainActivity extends Activity {
     private MediaPlayer clickSound;
     private boolean isRussian = true;
-    private TextView titleText, alphaText;
     private Button playBtn, langBtn;
 
     @Override
@@ -27,39 +27,32 @@ public class MainActivity extends Activity {
             clickSound = null;
         }
 
-        createFolders();
+        // ВЫЗОВ НАШЕЙ НОВОЙ ФУНКЦИИ
+        createGameFolders();
 
         LinearLayout menuLayout = new LinearLayout(this);
         menuLayout.setOrientation(LinearLayout.VERTICAL);
         menuLayout.setPadding(50, 50, 50, 50);
         menuLayout.setGravity(android.view.Gravity.CENTER);
-        // В стиле Windows XP: используем стандартный серый фон
-        menuLayout.setBackgroundColor(Color.rgb(236, 233, 216)); 
+        menuLayout.setBackgroundColor(Color.rgb(236, 233, 216)); // Стиль Windows XP
 
-        // Логотип
         ImageView logo = new ImageView(this);
-        try {
-            logo.setImageResource(R.drawable.minecraft);
-        } catch (Exception e) {}
+        try { logo.setImageResource(R.drawable.minecraft); } catch (Exception e) {}
         LinearLayout.LayoutParams logoParams = new LinearLayout.LayoutParams(300, 150);
         menuLayout.addView(logo, logoParams);
 
-        alphaText = new TextView(this);
+        TextView alphaText = new TextView(this);
         alphaText.setText("ALPHA VERSION");
         alphaText.setTextColor(Color.YELLOW); 
         alphaText.setTextSize(20f);
         alphaText.setPadding(0, 10, 0, 30);
         menuLayout.addView(alphaText);
 
-        // Текстура версии
         ImageView versionImg = new ImageView(this);
-        try {
-            versionImg.setImageResource(R.drawable.a01_java_edition);
-        } catch (Exception e) {}
+        try { versionImg.setImageResource(R.drawable.a01_java_edition); } catch (Exception e) {}
         LinearLayout.LayoutParams verParams = new LinearLayout.LayoutParams(200, 100);
         menuLayout.addView(versionImg, verParams);
 
-        // Кнопка Играть
         playBtn = new Button(this);
         playBtn.setOnClickListener(v -> {
             playSound();
@@ -67,7 +60,6 @@ public class MainActivity extends Activity {
         });
         menuLayout.addView(playBtn);
 
-        // Кнопка Языка
         langBtn = new Button(this);
         langBtn.setOnClickListener(v -> {
             playSound();
@@ -77,7 +69,7 @@ public class MainActivity extends Activity {
         menuLayout.addView(langBtn);
 
         setContentView(menuLayout);
-        updateLanguage(); // Устанавливаем текст по умолчанию
+        updateLanguage();
     }
 
     private void updateLanguage() {
@@ -97,12 +89,21 @@ public class MainActivity extends Activity {
         }
     }
 
-    // Создание папок при каждом запуске
-    private void createFolders() {
-        String[] folders = {"save_worlds", "resourcepacks", "mods", "versions"};
-        for (String folderName : folders) {
-            java.io.File folder = new java.io.File(getFilesDir(), folderName);
-            if (!folder.exists()) folder.mkdirs();
+    // СОЗДАНИЕ ПАПКИ GAME И ВНУТРЕННИХ ПАПОК
+    private void createGameFolders() {
+        // 1. Создаем папку Game в корне хранилища приложения
+        File gameFolder = new File(getFilesDir(), "Game");
+        if (!gameFolder.exists()) {
+            gameFolder.mkdirs();
+        }
+
+        // 2. Создаем папки внутри Game
+        String[] subFolders = {"saves", "resourcepacks", "mods"};
+        for (String folderName : subFolders) {
+            File subFolder = new File(gameFolder, folderName);
+            if (!subFolder.exists()) {
+                subFolder.mkdirs();
+            }
         }
     }
 }
