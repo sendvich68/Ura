@@ -9,6 +9,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.graphics.Color;
 
 public class MainActivity extends Activity {
     private MediaPlayer clickSound;
@@ -18,37 +19,37 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // Наш звук нажатия
-        clickSound = MediaPlayer.create(this, R.raw.click);
+        try {
+            clickSound = MediaPlayer.create(this, R.raw.click);
+        } catch (Exception e) {
+            clickSound = null; // Если звука нет, приложение не вылетит
+        }
 
-        // Экран меню (Windows XP стиль)
         LinearLayout menuLayout = new LinearLayout(this);
         menuLayout.setOrientation(LinearLayout.VERTICAL);
         menuLayout.setPadding(50, 50, 50, 50);
         menuLayout.setGravity(android.view.Gravity.CENTER);
-        menuLayout.setBackgroundColor(0xFF0058E3); // Синий фон Windows XP
+        menuLayout.setBackgroundColor(0xFF0058E3); 
 
-        // Логотип
+        // Логотип (Имя файла строго minecraft.png)
         ImageView logo = new ImageView(this);
-        logo.setImageResource(R.drawable.minecraft);
+        logo.setImageResource(R.drawable.minecraft); 
         LinearLayout.LayoutParams logoParams = new LinearLayout.LayoutParams(400, 200);
         menuLayout.addView(logo, logoParams);
 
-        // Текст Alpha Version
         TextView alphaText = new TextView(this);
         alphaText.setText("ALPHA VERSION");
-        alphaText.setTextColor(0xFFFFFF00); // Желтый
+        alphaText.setTextColor(Color.YELLOW); 
         alphaText.setTextSize(20f);
         alphaText.setPadding(0, 0, 0, 30);
         menuLayout.addView(alphaText);
 
-        // Текстура версии
+        // Текстура версии (Имя файла строго a01_java_edition.png)
         ImageView versionImg = new ImageView(this);
-        versionImg.setImageResource(R.drawable.a01_java_edition); // Имя файла без точки и цифры в начале
+        versionImg.setImageResource(R.drawable.a01_java_edition); 
         LinearLayout.LayoutParams verParams = new LinearLayout.LayoutParams(300, 150);
         menuLayout.addView(versionImg, verParams);
 
-        // Кнопка Играть (Создать мир)
         Button playBtn = new Button(this);
         playBtn.setText(isRussian ? "Создать мир" : "Create World");
         playBtn.setOnClickListener(v -> {
@@ -57,13 +58,12 @@ public class MainActivity extends Activity {
         });
         menuLayout.addView(playBtn);
 
-        // Кнопка Языка
         Button langBtn = new Button(this);
         langBtn.setText(isRussian ? "Язык: Русский" : "Language: English");
         langBtn.setOnClickListener(v -> {
             playSound();
             isRussian = !isRussian;
-            recreate(); // Перезапуск меню для смены языка
+            recreate(); 
         });
         menuLayout.addView(langBtn);
 
