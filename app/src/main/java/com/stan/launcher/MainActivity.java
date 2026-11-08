@@ -14,6 +14,8 @@ import android.graphics.Color;
 public class MainActivity extends Activity {
     private MediaPlayer clickSound;
     private boolean isRussian = true;
+    private TextView titleText, alphaText;
+    private Button playBtn, langBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,55 +24,85 @@ public class MainActivity extends Activity {
         try {
             clickSound = MediaPlayer.create(this, R.raw.click);
         } catch (Exception e) {
-            clickSound = null; // Если звука нет, приложение не вылетит
+            clickSound = null;
         }
+
+        createFolders();
 
         LinearLayout menuLayout = new LinearLayout(this);
         menuLayout.setOrientation(LinearLayout.VERTICAL);
         menuLayout.setPadding(50, 50, 50, 50);
         menuLayout.setGravity(android.view.Gravity.CENTER);
-        menuLayout.setBackgroundColor(0xFF0058E3); 
+        // В стиле Windows XP: используем стандартный серый фон
+        menuLayout.setBackgroundColor(Color.rgb(236, 233, 216)); 
 
-        // Логотип (Имя файла строго minecraft.png)
+        // Логотип
         ImageView logo = new ImageView(this);
-        logo.setImageResource(R.drawable.minecraft); 
-        LinearLayout.LayoutParams logoParams = new LinearLayout.LayoutParams(400, 200);
+        try {
+            logo.setImageResource(R.drawable.minecraft);
+        } catch (Exception e) {}
+        LinearLayout.LayoutParams logoParams = new LinearLayout.LayoutParams(300, 150);
         menuLayout.addView(logo, logoParams);
 
-        TextView alphaText = new TextView(this);
+        alphaText = new TextView(this);
         alphaText.setText("ALPHA VERSION");
         alphaText.setTextColor(Color.YELLOW); 
         alphaText.setTextSize(20f);
-        alphaText.setPadding(0, 0, 0, 30);
+        alphaText.setPadding(0, 10, 0, 30);
         menuLayout.addView(alphaText);
 
-        // Текстура версии (Имя файла строго a01_java_edition.png)
+        // Текстура версии
         ImageView versionImg = new ImageView(this);
-        versionImg.setImageResource(R.drawable.a01_java_edition); 
-        LinearLayout.LayoutParams verParams = new LinearLayout.LayoutParams(300, 150);
+        try {
+            versionImg.setImageResource(R.drawable.a01_java_edition);
+        } catch (Exception e) {}
+        LinearLayout.LayoutParams verParams = new LinearLayout.LayoutParams(200, 100);
         menuLayout.addView(versionImg, verParams);
 
-        Button playBtn = new Button(this);
-        playBtn.setText(isRussian ? "Создать мир" : "Create World");
+        // Кнопка Играть
+        playBtn = new Button(this);
         playBtn.setOnClickListener(v -> {
             playSound();
             startActivity(new Intent(MainActivity.this, GameActivity.class));
         });
         menuLayout.addView(playBtn);
 
-        Button langBtn = new Button(this);
-        langBtn.setText(isRussian ? "Язык: Русский" : "Language: English");
+        // Кнопка Языка
+        langBtn = new Button(this);
         langBtn.setOnClickListener(v -> {
             playSound();
             isRussian = !isRussian;
-            recreate(); 
+            updateLanguage();
         });
         menuLayout.addView(langBtn);
 
         setContentView(menuLayout);
+        updateLanguage(); // Устанавливаем текст по умолчанию
+    }
+
+    private void updateLanguage() {
+        if (isRussian) {
+            playBtn.setText("Создать мир");
+            langBtn.setText("Язык: Русский");
+        } else {
+            playBtn.setText("Create World");
+            langBtn.setText("Language: English");
+        }
     }
 
     private void playSound() {
-        if (clickSound != null) clickSound.start();
+        if (clickSound != null) {
+            clickSound.seekTo(0);
+            clickSound.start();
+        }
+    }
+
+    // Создание папок при каждом запуске
+    private void createFolders() {
+        String[] folders = {"save_worlds", "resourcepacks", "mods", "versions"};
+        for (String folderName : folders) {
+            java.io.File folder = new java.io.File(getFilesDir(), folderName);
+            if (!folder.exists()) folder.mkdirs();
+        }
     }
 }
