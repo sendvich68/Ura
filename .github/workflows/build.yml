@@ -14,6 +14,21 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Setup Android Project Template
+        run: |
+          # Клонируем минимальный шаблон
+          git clone https://github.com/androidthings/sample-empty.git temp_android
+          # Копируем всю инфраструктуру (gradlew, gradle-wrapper.jar и т.д.)
+          cp -r temp_android/* .
+          cp -r temp_android/.gradle . || true
+          
+      - name: Fix Build Config
+        run: |
+          # Меняем ID приложения, чтобы не конфликтовало
+          sed -i 's/com.example.androidthings.empty/com.stan.launcher/g' app/build.gradle
+          # Удаляем старую активити и лэйауты из шаблона, чтобы они не мешали
+          rm -rf app/src/main/java/com/example app/src/main/res/layout
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
