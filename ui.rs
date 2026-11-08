@@ -1,13 +1,11 @@
 use android_activity::{AndroidApp, MainEvent, PollEvent, InputStatus};
-use egui::Context;
+use egui::{Context, CentralPanel, RichText, Button};
 use crate::config::Config;
 use crate::game;
-use crate::overlay;
 
 pub struct AppLoop {
     app: AndroidApp,
     cfg: Config,
-    show_overlay: bool,
     egui_ctx: Context,
     raw_input: egui::RawInput,
 }
@@ -17,7 +15,6 @@ impl AppLoop {
         Self {
             app,
             cfg,
-            show_overlay: false,
             egui_ctx: Context::default(),
             raw_input: egui::RawInput::default(),
         }
@@ -26,9 +23,6 @@ impl AppLoop {
     pub fn run(&mut self) {
         loop {
             match self.app.poll_events(Some(std::time::Duration::from_millis(16))) {
-                PollEvent::Main(MainEvent::InitWindow { .. }) => {
-                    log::info!("Окно создано");
-                }
                 PollEvent::Main(MainEvent::WindowResized { width, height }) => {
                     self.raw_input.screen_rect = Some(egui::Rect::from_min_size(
                         egui::Pos2::ZERO,
@@ -41,16 +35,13 @@ impl AppLoop {
                         if let InputEvent::MotionEvent(m) = event {
                             if let Some(pointer) = m.pointers().first() {
                                 let pos = egui::pos2(pointer.x, pointer.y);
-                                let down = matches!(m.action(), MotionAction::Down);
-                                let up = matches!(m.action(), MotionAction::Up);
-
-                                if down {
+                                if matches!(m.action(), MotionAction::Down) {
                                     self.raw_input.events.push(egui::Event::PointerMoved(pos));
                                     self.raw_input.events.push(egui::Event::PointerButton {
                                         pos, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default(),
                                     });
                                 }
-                                if up {
+                                if matches!(m.action(), MotionAction::Up) {
                                     self.raw_input.events.push(egui::Event::PointerButton {
                                         pos, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default(),
                                     });
@@ -72,27 +63,30 @@ impl AppLoop {
         self.raw_input.time = Some(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs_f64()).unwrap_or(0.0));
 
         let _ = self.egui_ctx.run(self.raw_input.take(), |ctx| {
-            egui::CentralPanel::default().show(ctx, |ui| {
+            CentralPanel::default().show(ctx, |ui| {
                 ui.vertical_centered(|ui| {
-                    ui.add_space(40.0);
-                    ui.heading(egui::RichText::new("Stan Launcher").size(36.0).strong());
-                    ui.label(egui::RichText::new("Minecraft Bedrock v1.8").size(18.0));
-                    ui.add_space(30.0);
+                    ui.add_space(20.0);
+                    ui.heading(RichText::new("Stan Launcher").size(36.0).strong());
+                    ui.label(RichText::new("Minecraft Bedrock Edition").size(18.0));
+                    ui.add_space(20.0);
 
-                    if ui.add_sized([260.0, 56.0], egui::Button::new("▶  Играть")).clicked() {
+                    if ui.add_sized([260.0, 50.0], Button::new("▶  Играть (v1.8)")).clicked() {
                         game::try_launch(&self.app);
                     }
-                    ui.add_space(12.0);
-
-                    if ui.add_sized([260.0, 48.0], egui::Button::new("⚙  Настройки")).clicked() {
-                        self.show_overlay = !self.show_overlay;
-                    }
+                    
+                    ui.add_space(15.0);
+                    ui.horizontal(|ui| {
+                        ui.label("Версия: 1.8");
+                        ui.label(" | Моды: 0");
+                        ui.label(" | Ресурспаки: 0");
+                        ui.label(" | Миры: 0");
+                    });
+                    
+                    ui.add_space(15.0);
+                    ui.label(format!("Прозрачность кнопок: {:.1}", self.cfg.controls.transparency));
+                    ui.label(format!("Размер джойстика: {}", self.cfg.controls.joy_size));
                 });
             });
-
-            if self.show_overlay {
-                overlay::draw(ctx, &self.cfg.controls);
-            }
         });
     }
 }
