@@ -14,16 +14,20 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android 33 Platform
+        run: sdkmanager "platforms;android-33" "build-tools;33.0.2"
+
       - name: Download Gradle
         run: |
           wget https://services.gradle.org/distributions/gradle-8.5-bin.zip
           unzip -q gradle-8.5-bin.zip
-          export PATH=$PWD/gradle-8.5/bin:$PATH
-
+          
       - name: Build with Gradle
         run: |
-          export PATH=$PWD/gradle-8.5/bin:$PATH
-          gradle assembleDebug
+          ./gradle-8.5/bin/gradle assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
