@@ -19,8 +19,9 @@ jobs:
           ndk-version: r25c
           add-to-path: true
 
-      - name: Install cargo-apk
-        run: cargo install cargo-apk
+      - name: Install cargo-apk via Git
+        run: |
+          cargo install --git https://github.com/rust-mobile/cargo-apk cargo-apk
 
       - name: Build APK
         env:
